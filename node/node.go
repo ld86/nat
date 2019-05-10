@@ -56,6 +56,7 @@ func (node *Node) handleInboundMessages() {
 		if err != nil {
 			log.Printf("Cannot ReadFrom conn, %s", err)
 		}
+
 		var message Message
 		json.Unmarshal(buffer[:n], &message)
 		sourceAddr := node.knownNodes[message.SourceID]
@@ -98,9 +99,10 @@ func (node *Node) Serve() {
 	for {
 		time.Sleep(time.Second)
 		for _, remoteAddr := range node.knownNodes {
-			fmt.Printf("Sending my information to %s\n", remoteAddr)
+			fmt.Println(remoteAddr)
 			node.Ping(fmt.Sprintf("%s:%s", remoteAddr.LocalIP, remoteAddr.LocalPort))
 			node.Ping(fmt.Sprintf("%s:%s", remoteAddr.RemoteIP, remoteAddr.RemotePort))
 		}
+		fmt.Println()
 	}
 }
