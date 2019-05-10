@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ld86/nat/network"
@@ -18,6 +19,7 @@ type Node struct {
 	addr       NodeAddr
 	conn       net.PacketConn
 	knownNodes map[string]NodeAddr
+	mutex      sync.Mutex
 }
 
 type NodeAddr struct {
@@ -64,6 +66,9 @@ func (node *Node) handleInboundMessages() {
 		sourceAddr.LocalPort = message.SourceAddr.LocalPort
 		sourceAddr.RemoteIP = strings.Split(sourceRemoteAddr.String(), ":")[0]
 		sourceAddr.RemotePort = strings.Split(sourceRemoteAddr.String(), ":")[1]
+
+		node.mutex.Lock()
+		defer node.mutex.Unlock()
 		node.knownNodes[message.SourceID] = sourceAddr
 
 		for sourceID, sourceAddr := range message.KnownNodes {
@@ -98,11 +103,15 @@ func (node *Node) Serve() {
 	go node.handleInboundMessages()
 	for {
 		time.Sleep(time.Second)
+		node.mutex.Lock()
 		for _, remoteAddr := range node.knownNodes {
 			fmt.Println(remoteAddr)
 			node.Ping(fmt.Sprintf("%s:%s", remoteAddr.LocalIP, remoteAddr.LocalPort))
 			node.Ping(fmt.Sprintf("%s:%s", remoteAddr.RemoteIP, remoteAddr.RemotePort))
 		}
-		fmt.Println()
+		node.mutex.Unlock()
+		if len(node.knownNodes) > 0 {
+			fmt.Println()
+		}
 	}
 }
