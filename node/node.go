@@ -68,12 +68,12 @@ func (node *Node) handleInboundMessages() {
 		sourceAddr.RemotePort = strings.Split(sourceRemoteAddr.String(), ":")[1]
 
 		node.mutex.Lock()
-		defer node.mutex.Unlock()
 		node.knownNodes[message.SourceID] = sourceAddr
 
 		for sourceID, sourceAddr := range message.KnownNodes {
 			node.knownNodes[sourceID] = sourceAddr
 		}
+		node.mutex.Unlock()
 	}
 }
 
