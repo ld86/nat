@@ -58,13 +58,16 @@ func (node *Node) handleInboundMessages() {
 		}
 		var message Message
 		json.Unmarshal(buffer[:n], &message)
-		fmt.Println(message)
 		sourceAddr := node.knownNodes[message.SourceID]
 		sourceAddr.LocalIP = message.SourceAddr.LocalIP
 		sourceAddr.LocalPort = message.SourceAddr.LocalPort
 		sourceAddr.RemoteIP = strings.Split(sourceRemoteAddr.String(), ":")[0]
 		sourceAddr.RemotePort = strings.Split(sourceRemoteAddr.String(), ":")[1]
 		node.knownNodes[message.SourceID] = sourceAddr
+
+		for sourceID, sourceAddr := range message.KnownNodes {
+			node.knownNodes[sourceID] = sourceAddr
+		}
 	}
 }
 
