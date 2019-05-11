@@ -59,6 +59,8 @@ func (node *Node) handleInboundMessages() {
 			log.Printf("Cannot ReadFrom conn, %s", err)
 		}
 
+		fmt.Println(sourceRemoteAddr)
+
 		var message Message
 		json.Unmarshal(buffer[:n], &message)
 		sourceAddr := node.knownNodes[message.SourceID]
@@ -68,11 +70,15 @@ func (node *Node) handleInboundMessages() {
 		sourceAddr.RemotePort = strings.Split(sourceRemoteAddr.String(), ":")[1]
 
 		node.mutex.Lock()
+
+		for sourceID, knownAddr := range message.KnownNodes {
+			if _, ok := node.knownNodes[sourceID]; !ok {
+				node.knownNodes[sourceID] = knownAddr
+			}
+		}
+
 		node.knownNodes[message.SourceID] = sourceAddr
 
-		for sourceID, sourceAddr := range message.KnownNodes {
-			node.knownNodes[sourceID] = sourceAddr
-		}
 		node.mutex.Unlock()
 	}
 }
