@@ -59,7 +59,7 @@ func (node *Node) handleInboundMessages() {
 			log.Printf("Cannot ReadFrom conn, %s", err)
 		}
 
-		fmt.Println(sourceRemoteAddr)
+		fmt.Printf("[<] %s\n", sourceRemoteAddr)
 
 		var message Message
 		json.Unmarshal(buffer[:n], &message)
@@ -108,16 +108,24 @@ func (node *Node) Serve() {
 	fmt.Printf("%s:%s\n", node.addr.LocalIP, node.addr.LocalPort)
 	go node.handleInboundMessages()
 	for {
-		time.Sleep(time.Second)
+		time.Sleep(5 * time.Second)
 		node.mutex.Lock()
-		for _, remoteAddr := range node.knownNodes {
-			fmt.Println(remoteAddr)
-			node.Ping(fmt.Sprintf("%s:%s", remoteAddr.LocalIP, remoteAddr.LocalPort))
+		for remoteID, remoteAddr := range node.knownNodes {
+			if remoteID == node.id {
+				continue
+			}
+
+			localIP := fmt.Sprintf("%s:%s", remoteAddr.LocalIP, remoteAddr.LocalPort)
+			remoteIP := fmt.Sprintf("%s:%s", remoteAddr.RemoteIP, remoteAddr.RemotePort)
+
+			if localIP != remoteIP {
+				fmt.Printf("[>] %s\n", localIP)
+				node.Ping(fmt.Sprintf("%s:%s", remoteAddr.LocalIP, remoteAddr.LocalPort))
+			}
+
+			fmt.Printf("[>] %s\n", remoteIP)
 			node.Ping(fmt.Sprintf("%s:%s", remoteAddr.RemoteIP, remoteAddr.RemotePort))
 		}
 		node.mutex.Unlock()
-		if len(node.knownNodes) > 0 {
-			fmt.Println()
-		}
 	}
 }
